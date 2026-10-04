@@ -10,9 +10,9 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.Robot.Susbsystems.Blocker;
-import org.firstinspires.ftc.teamcode.Robot.Susbsystems.Intake;
-import org.firstinspires.ftc.teamcode.Robot.Susbsystems.Shooter;
+import org.firstinspires.ftc.teamcode.Robot.Subsystems.Blocker;
+import org.firstinspires.ftc.teamcode.Robot.Subsystems.Intake;
+import org.firstinspires.ftc.teamcode.Robot.Subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.Utils.Telem;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 

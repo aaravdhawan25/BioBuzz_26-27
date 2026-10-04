@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Robot.Susbsystems;
+package org.firstinspires.ftc.teamcode.Robot.Subsystems;
 
 import static org.firstinspires.ftc.teamcode.Utils.Constants.ShooterConstants.kD;
 import static org.firstinspires.ftc.teamcode.Utils.Constants.ShooterConstants.kF;
@@ -6,7 +6,6 @@ import static org.firstinspires.ftc.teamcode.Utils.Constants.ShooterConstants.kI
 import static org.firstinspires.ftc.teamcode.Utils.Constants.ShooterConstants.kP;
 
 import com.arcrobotics.ftclib.command.Subsystem;
-import com.arcrobotics.ftclib.controller.PIDController;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.DcMotorEx;

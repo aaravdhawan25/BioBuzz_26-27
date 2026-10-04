@@ -1,7 +1,6 @@
-package org.firstinspires.ftc.teamcode.Robot.Susbsystems;
+package org.firstinspires.ftc.teamcode.Robot.Subsystems;
 
 import com.arcrobotics.ftclib.command.Subsystem;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.Utils.Constants.IntakeConstants;

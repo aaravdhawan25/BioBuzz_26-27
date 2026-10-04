@@ -4,7 +4,7 @@ import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.ParallelCommandGroup;
 
 import org.firstinspires.ftc.teamcode.Robot.Robot;
-import org.firstinspires.ftc.teamcode.Robot.Susbsystems.Shooter;
+import org.firstinspires.ftc.teamcode.Robot.Subsystems.Shooter;
 
 public class ShooterCommand extends ParallelCommandGroup {
 
