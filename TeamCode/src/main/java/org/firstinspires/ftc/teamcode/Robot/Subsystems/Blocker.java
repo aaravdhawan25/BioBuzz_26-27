@@ -31,6 +31,11 @@ public class Blocker implements Subsystem {
 
     }
 
+    @Override
+    public void periodic(){
+
+    }
+
     public enum BlockerState {
         CLOSED,
         OPEN

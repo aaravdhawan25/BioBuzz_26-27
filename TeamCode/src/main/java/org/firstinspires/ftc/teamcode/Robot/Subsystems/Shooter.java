@@ -20,15 +20,16 @@ public class Shooter implements Subsystem {
 
     DcMotorEx shooterMotor, shooterMotor2;
     RevColorSensorV3 sensorV3;
-    Servo compressionControl;
+    Servo compressionControl, linearServo;
     ShooterStates shooterStates;
 
-    CompressionStates compressionStates;
+    public static CompressionStates compressionStates;
     PIDFController shooterPIDController;
-    public Shooter(DcMotorEx shooterMotor, DcMotorEx shooterMotor2, Servo compressionControl, RevColorSensorV3 sensorV3){
+    public Shooter(DcMotorEx shooterMotor, DcMotorEx shooterMotor2, Servo compressionControl, Servo linearServo, RevColorSensorV3 sensorV3){
         this.shooterMotor = shooterMotor;
         this.shooterMotor2 = shooterMotor2;
         this.compressionControl = compressionControl;
+        this.linearServo = linearServo;
         this.sensorV3 = sensorV3;
         this.shooterPIDController = new PIDFController(kP, kI, kD, kF);
         this.shooterPIDController.setTolerance(10);
@@ -38,7 +39,7 @@ public class Shooter implements Subsystem {
         return shooterStates;
     }
 
-    public CompressionStates getCompressionState(){
+    public static CompressionStates getCompressionState(){
         return compressionStates;
     }
 
@@ -58,10 +59,12 @@ public class Shooter implements Subsystem {
         switch (state){
             case NECTAR:
                 setCompressionControl(ShooterConstants.nectarPose);
+                setLinearShooterPosition(ShooterConstants.slidesNectarServoPOS);
                 break;
 
             case POLLEN:
                 setCompressionControl(ShooterConstants.pollenPose);
+                setLinearShooterPosition(ShooterConstants.slidesPollenServoPOS);
                 break;
 
         }
@@ -84,6 +87,10 @@ public class Shooter implements Subsystem {
 
     public void setCompressionControl(double pos){
         compressionControl.setPosition(pos);
+    }
+
+    public void setLinearShooterPosition(double pos){
+        linearServo.setPosition(pos);
     }
 
     public void classifyBall() {

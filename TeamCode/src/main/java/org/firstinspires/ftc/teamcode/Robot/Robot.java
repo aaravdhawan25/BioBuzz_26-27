@@ -13,6 +13,9 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Blocker;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Shooter;
+import org.firstinspires.ftc.teamcode.Robot.Subsystems.Turret;
+import org.firstinspires.ftc.teamcode.Utils.Constants.BotConstants;
+import org.firstinspires.ftc.teamcode.Utils.Constants.TurretConstants;
 import org.firstinspires.ftc.teamcode.Utils.Telem;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
@@ -22,15 +25,21 @@ public class Robot {
     public List<LynxModule> hubs;
     public Intake intake;
     public Shooter shooter;
+    public Turret turret;
     public Follower follower;
     public Blocker blocker;
     DcMotorEx intakeMotor, transferMotor;
     DcMotorEx shooterMotor, shooterMotor2;
     RevColorSensorV3 sensorV3;
-    Servo compressionServo;
+    Servo flowerRamp;
+    Servo compressionServo, linearServo;
     Servo blockerServo;
+    Servo turretServoOne, turretServoTwo;
     String color;
     boolean isAuto;
+    boolean holding;
+    public static boolean startSide;
+    public static boolean isRed;
     public static Pose currentPose = new Pose(0,0,0);
     public Robot(HardwareMap map, Telemetry tel, String color, boolean isAuto){
 
@@ -41,22 +50,31 @@ public class Robot {
 
         this.color = color;
         this.isAuto = isAuto;
+        this.isRed = color.equals("RED");
+        this.startSide = true;
+        this.holding = false;
+
         this.intakeMotor = map.get(DcMotorEx.class, "intakeMotor");
         this.transferMotor = map.get(DcMotorEx.class, "transferMotor");
         this.shooterMotor = map.get(DcMotorEx.class, "shooter");
         this.shooterMotor2 = map.get(DcMotorEx.class, "shooter2");
         this.sensorV3 = map.get(RevColorSensorV3.class, "shooterSensor");
+        this.flowerRamp = map.get(Servo.class, "flowerRamp");
         this.compressionServo = map.get(Servo.class, "compressionServo");
+        this.linearServo = map.get(Servo.class, "slidingTurret");
         this.blockerServo = map.get(Servo.class, "blocker");
+        this.turretServoOne = map.get(Servo.class, "turretServoOne");
+        this.turretServoTwo = map.get(Servo.class, "turretServoTwo");
 
-        intake = new Intake(intakeMotor, transferMotor);
-        shooter = new Shooter(shooterMotor, shooterMotor2, compressionServo, sensorV3);
+        intake = new Intake(intakeMotor, transferMotor, flowerRamp);
+        shooter = new Shooter(shooterMotor, shooterMotor2, compressionServo, linearServo, sensorV3);
         blocker = new Blocker(blockerServo);
+        turret = new Turret(turretServoOne, turretServoTwo);
         follower = Constants.create(map);
 
         Telem.init(tel);
         CommandScheduler.getInstance().reset();
-        CommandScheduler.getInstance().registerSubsystem(intake, shooter, blocker);
+        CommandScheduler.getInstance().registerSubsystem(intake, shooter, blocker, turret);
     }
 
     public void init(){
@@ -75,8 +93,52 @@ public class Robot {
         }
     }
 
-    public void holdPoint(){
-        follower.hold(currentPose);
+    public void stop(){
+        Pose pose = follower.pose();
+        CommandScheduler.getInstance().reset();
+        Robot.currentPose = pose;
     }
 
+    public void flipGoal(){
+        startSide = !startSide;
+    }
+
+    public static double getDistanceFromGoal(Pose pose){
+        Pose goalPose = Robot.getGoalPose();
+
+        double dX = pose.x() - goalPose.x();
+        double dY = pose.y() - goalPose.y();
+
+        return Math.hypot(dX, dY);
+    }
+
+    public static Pose getCurrentPosition(){
+        return currentPose;
+    }
+
+    public static Pose getGoalPose(){
+        if (isRed && startSide){
+            return new Pose(BotConstants.redGoalPoseX,BotConstants.redGoalPoseStartY);
+        }
+        if (isRed && !startSide){
+            return new Pose(BotConstants.redGoalPoseX, BotConstants.redGoalPoseTipY);
+        }
+        if (!isRed && !startSide){
+            return new Pose(BotConstants.blueGoalPoseX, BotConstants.blueGoalPoseTipY);
+        }
+
+        return new Pose(BotConstants.blueGoalPoseX, BotConstants.blueGoalPoseStartY);
+    }
+
+    public static Pose getTurretPosition(Pose cur) {
+        double heading = cur.heading();
+        double turretX = (Shooter.getCompressionState() == Shooter.CompressionStates.NECTAR) ? (cur.x()
+                + TurretConstants.turretXOFFSET * Math.cos(heading)
+                - TurretConstants.turretYOFFSET * Math.sin(heading)) : cur.x();
+        double turretY = (Shooter.getCompressionState() == Shooter.CompressionStates.NECTAR) ? (cur.y()
+                + TurretConstants.turretXOFFSET * Math.sin(heading)
+                + TurretConstants.turretYOFFSET * Math.cos(heading)) : cur.y();
+
+        return new Pose(turretX, turretY, heading);
+    }
 }

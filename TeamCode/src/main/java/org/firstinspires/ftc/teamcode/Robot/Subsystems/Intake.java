@@ -2,16 +2,19 @@ package org.firstinspires.ftc.teamcode.Robot.Subsystems;
 
 import com.arcrobotics.ftclib.command.Subsystem;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.Utils.Constants.IntakeConstants;
 
 public class Intake implements Subsystem {
 
     DcMotorEx intakeMotor, transferMotor;
+    Servo flowerRamp;
     IntakeStates states;
-    public Intake(DcMotorEx intakeMotor, DcMotorEx transferMotor){
+    public Intake(DcMotorEx intakeMotor, DcMotorEx transferMotor, Servo flowerRamp){
         this.intakeMotor = intakeMotor;
         this.transferMotor = transferMotor;
+        this.flowerRamp = flowerRamp;
     }
 
     public IntakeStates getState(){

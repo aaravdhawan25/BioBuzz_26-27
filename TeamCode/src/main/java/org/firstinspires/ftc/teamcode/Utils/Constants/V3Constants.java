@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.Utils.Constants;
 
+import com.acmerobotics.dashboard.config.Config;
+
+@Config
 public class V3Constants {
 
     public static double totalRGB = 100;

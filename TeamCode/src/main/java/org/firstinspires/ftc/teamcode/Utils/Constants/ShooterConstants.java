@@ -14,6 +14,8 @@ public class ShooterConstants {
     public static double MAX_RPM = 6000;
     public static double pollenPose = 0;
     public static double nectarPose = 0.5;
+    public static double slidesPollenServoPOS = 0;
+    public static double slidesNectarServoPOS = 0.5;
 
 
 }
