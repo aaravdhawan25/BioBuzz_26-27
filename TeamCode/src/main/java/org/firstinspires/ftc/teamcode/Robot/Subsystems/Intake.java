@@ -11,6 +11,7 @@ public class Intake implements Subsystem {
     DcMotorEx intakeMotor, transferMotor;
     Servo flowerRamp;
     IntakeStates states;
+    RampStates state;
     public Intake(DcMotorEx intakeMotor, DcMotorEx transferMotor, Servo flowerRamp){
         this.intakeMotor = intakeMotor;
         this.transferMotor = transferMotor;
@@ -19,6 +20,9 @@ public class Intake implements Subsystem {
 
     public IntakeStates getState(){
         return states;
+    }
+    public RampStates getRampState(){
+        return state;
     }
 
     public void setState(IntakeStates states){
@@ -42,6 +46,19 @@ public class Intake implements Subsystem {
 
     }
 
+    public void setState(RampStates state){
+        this.state = state;
+
+        switch (state){
+            case DEPLOYED:
+                flowerRamp.setPosition(IntakeConstants.rampDeployedPosition);
+                break;
+            case RETRACTED:
+                flowerRamp.setPosition(IntakeConstants.rampRetractedPosition);
+                break;
+        }
+    }
+
     @Override
     public void periodic(){
 
@@ -51,6 +68,11 @@ public class Intake implements Subsystem {
         ON,
         OFF,
         REVERSE
+    }
+
+    public enum RampStates {
+        DEPLOYED,
+        RETRACTED
     }
 
 }

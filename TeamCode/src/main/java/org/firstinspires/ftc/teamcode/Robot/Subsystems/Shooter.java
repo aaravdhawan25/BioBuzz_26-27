@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.teamcode.Robot.Robot;
 import org.firstinspires.ftc.teamcode.Utils.Constants.ShooterConstants;
 import org.firstinspires.ftc.teamcode.Utils.Constants.V3Constants;
 import org.firstinspires.ftc.teamcode.Utils.Telem;
@@ -47,6 +48,22 @@ public class Shooter implements Subsystem {
         this.shooterStates = states;
 
         switch (states){
+            case OFF:
+                setShooterPower(ShooterConstants.idleRPM);
+                break;
+            case NORMAL:
+                setShooterPower(ShooterConstants.normRPM);
+                break;
+            case ON:
+                break;
+            case MATH_NECTAR:
+                calculateRPMNectar(Robot.getDistanceFromGoal(Robot.currentPose));
+                break;
+            case MATH_POLLEN:
+                calculateRPMPollen(Robot.getDistanceFromGoal(Robot.currentPose));
+                break;
+
+
 
 
         }
@@ -60,11 +77,17 @@ public class Shooter implements Subsystem {
             case NECTAR:
                 setCompressionControl(ShooterConstants.nectarPose);
                 setLinearShooterPosition(ShooterConstants.slidesNectarServoPOS);
+                if (getShooterState() != ShooterStates.OFF && getShooterState()!= ShooterStates.NORMAL){
+                    setState(ShooterStates.MATH_NECTAR);
+                }
                 break;
 
             case POLLEN:
                 setCompressionControl(ShooterConstants.pollenPose);
                 setLinearShooterPosition(ShooterConstants.slidesPollenServoPOS);
+                if (getShooterState() != ShooterStates.OFF && getShooterState()!= ShooterStates.NORMAL){
+                    setState(ShooterStates.MATH_POLLEN);
+                }
                 break;
 
         }
@@ -82,7 +105,7 @@ public class Shooter implements Subsystem {
     }
 
     public boolean atTargetSpeed(){
-        return shooterPIDController.getPositionError() <= 100;
+        return shooterPIDController.getPositionError() <= 100 && getShooterState() != ShooterStates.OFF;
     }
 
     public void setCompressionControl(double pos){
@@ -112,6 +135,13 @@ public class Shooter implements Subsystem {
         }
 
     }
+    public double calculateRPMNectar(double distance){
+        return -0.105746 * Math.pow(distance, 2) +32.33112*distance +1558.21332;
+    }
+
+    public double calculateRPMPollen(double distance){
+        return -0.105746 * Math.pow(distance, 2) +32.33112*distance +1558.21332;
+    }
 
     public void setShooterPower(double rpm){
 
@@ -134,9 +164,10 @@ public class Shooter implements Subsystem {
 
     public enum ShooterStates {
         NORMAL,
-        MATH,
+        MATH_POLLEN,
+        MATH_NECTAR,
+        ON,
         OFF,
-        REVERSE
     }
 
     public enum CompressionStates {

@@ -15,4 +15,11 @@ public class IntakeCommand extends ParallelCommandGroup {
         );
     }
 
+    public IntakeCommand(Robot robot, Intake.RampStates state){
+        addCommands(
+                new InstantCommand(() -> robot.intake.setState(state), robot.intake)
+        );
+
+    }
+
 }

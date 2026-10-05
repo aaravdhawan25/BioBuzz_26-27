@@ -77,15 +77,19 @@ public class Robot {
         CommandScheduler.getInstance().registerSubsystem(intake, shooter, blocker, turret);
     }
 
-    public void init(){
-        for (LynxModule hub : hubs){
-            hub.clearBulkCache();
-        }
-    }
-
     public void update(){
+        CommandScheduler.getInstance().run();
         follower.update();
         currentPose = follower.pose();
+
+        if(intake != null)
+            Telem.addData("Intake State", intake.getState());
+        if(shooter != null){
+            Telem.addData("Shooter State", shooter.getShooterState());
+            Telem.addData("Shooter Compression State", Shooter.getCompressionState());
+        }
+        if(turret != null)
+            Telem.addData("Turret State", turret.getState());
 
         Telem.update();
         for (LynxModule hub : hubs){
@@ -96,6 +100,9 @@ public class Robot {
     public void stop(){
         Pose pose = follower.pose();
         CommandScheduler.getInstance().reset();
+        for (LynxModule hub : hubs){
+            hub.clearBulkCache();
+        }
         Robot.currentPose = pose;
     }
 

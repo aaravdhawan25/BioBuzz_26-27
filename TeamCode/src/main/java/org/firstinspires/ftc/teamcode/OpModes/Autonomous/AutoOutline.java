@@ -31,7 +31,7 @@ public class AutoOutline extends OpMode {
 
     Robot robot;
     String color;
-    SequentialCommandGroup auton;
+    SequentialCommandGroup autonomous;
 
     private AutoPaths paths;
 
@@ -48,13 +48,19 @@ public class AutoOutline extends OpMode {
                 new TurretCommand(robot, Turret.TurretState.FORWARD)
         );
 
-        auton = new SequentialCommandGroup(
+        autonomous = new SequentialCommandGroup(
                 shootFour(),
                 intake(paths.startToGarden()),
                 new FollowPathCommand(robot.follower, paths.gardenToLaunch1()),
                 shootFour(),
-                intake(paths.launch1ToFlower()),
-                new FollowPathCommand(robot.follower, paths.flowerToLaunch2()),
+                intakeFromFlower(paths.launch1ToFlower()),
+                new ParallelCommandGroup(
+                        new FollowPathCommand(robot.follower, paths.flowerToLaunch2()),
+                        new SequentialCommandGroup(
+                                new WaitCommand(1000),
+                                new IntakeCommand(robot, Intake.RampStates.RETRACTED)
+                        )
+                ),
                 shootFour(),
                 new FollowPathCommand(robot.follower, paths.launch2ToPark())
         );
@@ -65,7 +71,7 @@ public class AutoOutline extends OpMode {
     @Override
     public void start(){
         CommandScheduler.getInstance().schedule(
-                auton
+                autonomous
         );
     }
 
@@ -74,15 +80,13 @@ public class AutoOutline extends OpMode {
         robot.update();
     }
 
-    public ParallelCommandGroup shootFour(){
-        return new ParallelCommandGroup(
+    public SequentialCommandGroup shootFour(){
+        return new SequentialCommandGroup(
                 new TurretCommand(robot, Turret.TurretState.MATH),
-                new ShooterCommand(robot, Shooter.ShooterStates.MATH),
+                new ShooterCommand(robot, Shooter.ShooterStates.ON),
                 new TransferCommand(robot),
-                new SequentialCommandGroup(
-                        new WaitCommand(500),
-                        new TransferCancelCommand(robot)
-                )
+                new WaitCommand(500),
+                new TransferCancelCommand(robot)
         );
     }
 
@@ -96,6 +100,20 @@ public class AutoOutline extends OpMode {
                         new WaitCommand(600),
                         new IntakeCommand(robot, Intake.IntakeStates.OFF)
 
+                )
+        );
+    }
+
+    public ParallelCommandGroup intakeFromFlower(Path path){
+        return new ParallelCommandGroup(
+                new FollowPathCommand(robot.follower, path),
+                new SequentialCommandGroup(
+                        new WaitCommand(800),
+                        new IntakeCommand(robot, Intake.IntakeStates.ON),
+                        new IntakeCommand(robot, Intake.RampStates.DEPLOYED),
+                        new WaitUntilCommand(() -> !robot.follower.isBusy()),
+                        new WaitCommand(600),
+                        new IntakeCommand(robot, Intake.IntakeStates.OFF)
                 )
         );
     }

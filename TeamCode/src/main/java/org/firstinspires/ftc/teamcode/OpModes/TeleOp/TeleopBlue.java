@@ -7,6 +7,7 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.pedropathing.follower.ManualDrive;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Robot.Commands.BlockerCommand;
 import org.firstinspires.ftc.teamcode.Robot.Commands.IntakeCommand;
@@ -19,7 +20,7 @@ import org.firstinspires.ftc.teamcode.Robot.Subsystems.Blocker;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Turret;
-
+@TeleOp(name = "TeleOp Blue")
 public class TeleopBlue extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
@@ -39,16 +40,13 @@ public class TeleopBlue extends LinearOpMode {
         );
         gp2.getGamepadButton(GamepadKeys.Button.Y).whenPressed(
                 new ParallelCommandGroup(
-                        new ShooterCommand(robot, Shooter.ShooterStates.MATH),
+                        new ShooterCommand(robot, Shooter.ShooterStates.ON),
                         new TransferCommand(robot)
                 )
 
         );
         gp2.getGamepadButton(GamepadKeys.Button.Y).whenReleased(
-                new ParallelCommandGroup(
-                        new ShooterCommand(robot, Shooter.ShooterStates.OFF),
-                        new TransferCancelCommand(robot)
-                )
+                new TransferCancelCommand(robot)
         );
         gp2.getGamepadButton(GamepadKeys.Button.RIGHT_BUMPER).whenPressed(
                 new IntakeCommand(robot, Intake.IntakeStates.ON)
@@ -69,7 +67,7 @@ public class TeleopBlue extends LinearOpMode {
         );
 
         while (opModeInInit()){
-            robot.init();
+
         }
 
         waitForStart();

@@ -10,6 +10,7 @@ public class ShooterConstants {
     public static double kD = 0;
     public static double kF = 0;
     public static double idleRPM = 2000;
+    public static double normRPM = 2300;
     public static double TICKS_PER_REV = 28;
     public static double MAX_RPM = 6000;
     public static double pollenPose = 0;
