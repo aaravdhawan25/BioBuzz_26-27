@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Robot;
 
 import com.arcrobotics.ftclib.command.CommandScheduler;
+import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.lynx.LynxModule;
@@ -15,6 +16,7 @@ import org.firstinspires.ftc.teamcode.Robot.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Turret;
 import org.firstinspires.ftc.teamcode.Utils.Constants.BotConstants;
+import org.firstinspires.ftc.teamcode.Utils.Constants.HardwareMapNames;
 import org.firstinspires.ftc.teamcode.Utils.Constants.TurretConstants;
 import org.firstinspires.ftc.teamcode.Utils.Telem;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
@@ -54,17 +56,17 @@ public class Robot {
         this.startSide = true;
         this.holding = false;
 
-        this.intakeMotor = map.get(DcMotorEx.class, "intakeMotor");
-        this.transferMotor = map.get(DcMotorEx.class, "transferMotor");
-        this.shooterMotor = map.get(DcMotorEx.class, "shooter");
-        this.shooterMotor2 = map.get(DcMotorEx.class, "shooter2");
-        this.sensorV3 = map.get(RevColorSensorV3.class, "shooterSensor");
-        this.flowerRamp = map.get(Servo.class, "flowerRamp");
-        this.compressionServo = map.get(Servo.class, "compressionServo");
-        this.linearServo = map.get(Servo.class, "slidingTurret");
-        this.blockerServo = map.get(Servo.class, "blocker");
-        this.turretServoOne = map.get(Servo.class, "turretServoOne");
-        this.turretServoTwo = map.get(Servo.class, "turretServoTwo");
+        this.intakeMotor = map.get(DcMotorEx.class, HardwareMapNames.intakeMotorConfig);
+        this.transferMotor = map.get(DcMotorEx.class, HardwareMapNames.transferMotorConfig);
+        this.shooterMotor = map.get(DcMotorEx.class, HardwareMapNames.shooterMotorConfig);
+        this.shooterMotor2 = map.get(DcMotorEx.class, HardwareMapNames.shooterMotor2Config);
+        this.sensorV3 = map.get(RevColorSensorV3.class, HardwareMapNames.shooterSensorConfig);
+        this.flowerRamp = map.get(Servo.class, HardwareMapNames.flowerRampConfig);
+        this.compressionServo = map.get(Servo.class, HardwareMapNames.compressionServoConfig);
+        this.linearServo = map.get(Servo.class, HardwareMapNames.slidingTurretConfig);
+        this.blockerServo = map.get(Servo.class, HardwareMapNames.blockerServoConfig);
+        this.turretServoOne = map.get(Servo.class, HardwareMapNames.turretServo1Config);
+        this.turretServoTwo = map.get(Servo.class, HardwareMapNames.turretServo2Config);
 
         intake = new Intake(intakeMotor, transferMotor, flowerRamp);
         shooter = new Shooter(shooterMotor, shooterMotor2, compressionServo, linearServo, sensorV3);
@@ -108,6 +110,10 @@ public class Robot {
 
     public void flipGoal(){
         startSide = !startSide;
+    }
+
+    public void resetPosition(){
+        follower.setPose(PoseFactory.degrees().of(8.483, 8.263, 90));
     }
 
     public static double getDistanceFromGoal(Pose pose){

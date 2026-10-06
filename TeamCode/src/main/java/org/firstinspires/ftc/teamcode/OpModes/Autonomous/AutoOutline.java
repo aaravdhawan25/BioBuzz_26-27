@@ -54,13 +54,8 @@ public class AutoOutline extends OpMode {
                 new FollowPathCommand(robot.follower, paths.gardenToLaunch1()),
                 shootFour(),
                 intakeFromFlower(paths.launch1ToFlower()),
-                new ParallelCommandGroup(
-                        new FollowPathCommand(robot.follower, paths.flowerToLaunch2()),
-                        new SequentialCommandGroup(
-                                new WaitCommand(1000),
-                                new IntakeCommand(robot, Intake.RampStates.RETRACTED)
-                        )
-                ),
+                new FollowPathCommand(robot.follower, paths.flowerToLaunch2()),
+                new IntakeCommand(robot, Intake.RampStates.RETRACTED),
                 shootFour(),
                 new FollowPathCommand(robot.follower, paths.launch2ToPark())
         );
@@ -145,7 +140,6 @@ public class AutoOutline extends OpMode {
 
         public AutoPaths(String color) {
             startPose = pose(AutoConstants.startX, AutoConstants.startY, AutoConstants.startHeading, color);
-
             gardenPollenPose = pose(AutoConstants.gardenPollenX, AutoConstants.gardenPollenY, AutoConstants.gardenPollenHeading, color);
             startToGardenControl = pose(AutoConstants.startToGardenContX, AutoConstants.startToGardenContY, 0, color);
             gardenTurnSeg1Start = pose(AutoConstants.gardenPollenX, AutoConstants.gardenPollenY, AutoConstants.gardenTurnSeg1StartHeading, color);
@@ -168,6 +162,7 @@ public class AutoOutline extends OpMode {
             loadingZoneParkPose = pose(AutoConstants.loadingZoneParkX, AutoConstants.loadingZoneParkY, AutoConstants.loadingZoneParkHeading, color);
             launch2ToParkControl1 = pose(AutoConstants.launch2ToParkCont1X, AutoConstants.launch2ToParkCont1Y, 0, color);
             launch2ToParkControl2 = pose(AutoConstants.launch2ToParkCont2X, AutoConstants.launch2ToParkCont2Y, 0, color);
+            robot.follower.setPose(startPose);
         }
 
         private Pose pose(double x, double y, double headingDeg, String color) {

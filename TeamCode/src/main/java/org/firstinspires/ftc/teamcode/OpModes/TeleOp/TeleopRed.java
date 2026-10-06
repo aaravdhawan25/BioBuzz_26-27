@@ -36,6 +36,10 @@ public class TeleopRed extends LinearOpMode {
                 new TurretCommand(robot, Turret.TurretState.FORWARD)
         );
 
+        gp1.getGamepadButton(GamepadKeys.Button.DPAD_LEFT).whenPressed(
+                new InstantCommand(robot::resetPosition)
+        );
+
         gp2.getGamepadButton(GamepadKeys.Button.DPAD_DOWN).whenPressed(
                 new InstantCommand(robot::flipGoal)
         );
