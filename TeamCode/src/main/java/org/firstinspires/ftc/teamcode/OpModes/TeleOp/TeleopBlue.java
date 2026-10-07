@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.OpModes.TeleOp;
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.ParallelCommandGroup;
+import com.arcrobotics.ftclib.command.SequentialCommandGroup;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.pedropathing.follower.ManualDrive;
@@ -20,6 +21,7 @@ import org.firstinspires.ftc.teamcode.Robot.Subsystems.Blocker;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Turret;
+
 @TeleOp(name = "TeleOp Blue")
 public class TeleopBlue extends LinearOpMode {
     @Override
@@ -39,6 +41,15 @@ public class TeleopBlue extends LinearOpMode {
                 new InstantCommand(robot::resetPosition)
         );
 
+        gp1.getGamepadButton(GamepadKeys.Button.LEFT_BUMPER).whenPressed(
+                new IntakeCommand(robot, Intake.IntakeStates.REVERSE)
+        );
+
+        gp1.getGamepadButton(GamepadKeys.Button.LEFT_BUMPER).whenReleased(
+                new IntakeCommand(robot, Intake.IntakeStates.OFF)
+        );
+
+
         gp2.getGamepadButton(GamepadKeys.Button.DPAD_DOWN).whenPressed(
                 new InstantCommand(robot::flipGoal)
         );
@@ -47,7 +58,6 @@ public class TeleopBlue extends LinearOpMode {
                         new ShooterCommand(robot, Shooter.ShooterStates.ON),
                         new TransferCommand(robot)
                 )
-
         );
         gp2.getGamepadButton(GamepadKeys.Button.Y).whenReleased(
                 new TransferCancelCommand(robot)
@@ -58,16 +68,26 @@ public class TeleopBlue extends LinearOpMode {
         gp2.getGamepadButton(GamepadKeys.Button.RIGHT_BUMPER).whenReleased(
                 new IntakeCommand(robot, Intake.IntakeStates.OFF)
         );
+
         gp2.getGamepadButton(GamepadKeys.Button.LEFT_BUMPER).whenPressed(
-                new IntakeCommand(robot, Intake.IntakeStates.REVERSE)
+                new SequentialCommandGroup(
+                        new IntakeCommand(robot, Intake.IntakeStates.ON),
+                        new IntakeCommand(robot, Intake.RampStates.DEPLOYED)
+                )
+
         );
         gp2.getGamepadButton(GamepadKeys.Button.LEFT_BUMPER).whenReleased(
-                new IntakeCommand(robot, Intake.IntakeStates.OFF)
+                new SequentialCommandGroup(
+                        new IntakeCommand(robot, Intake.IntakeStates.ON),
+                        new IntakeCommand(robot, Intake.RampStates.RETRACTED)
+                )
+
         );
 
         CommandScheduler.getInstance().schedule(
                 new BlockerCommand(robot, Blocker.BlockerState.CLOSED),
-                new TurretCommand(robot, Turret.TurretState.FORWARD)
+                new TurretCommand(robot, Turret.TurretState.FORWARD),
+                new IntakeCommand(robot, Intake.RampStates.RETRACTED)
         );
 
         while (opModeInInit()){

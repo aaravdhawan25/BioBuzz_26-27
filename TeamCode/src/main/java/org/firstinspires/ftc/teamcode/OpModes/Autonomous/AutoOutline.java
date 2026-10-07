@@ -45,7 +45,8 @@ public class AutoOutline extends OpMode {
         paths = new AutoPaths(color);
         CommandScheduler.getInstance().schedule(
                 new BlockerCommand(robot, Blocker.BlockerState.CLOSED),
-                new TurretCommand(robot, Turret.TurretState.FORWARD)
+                new TurretCommand(robot, Turret.TurretState.FORWARD),
+                new IntakeCommand(robot, Intake.RampStates.RETRACTED)
         );
 
         autonomous = new SequentialCommandGroup(
@@ -139,37 +140,36 @@ public class AutoOutline extends OpMode {
         Pose launch2ToParkControl2;
 
         public AutoPaths(String color) {
-            startPose = pose(AutoConstants.startX, AutoConstants.startY, AutoConstants.startHeading, color);
-            gardenPollenPose = pose(AutoConstants.gardenPollenX, AutoConstants.gardenPollenY, AutoConstants.gardenPollenHeading, color);
-            startToGardenControl = pose(AutoConstants.startToGardenContX, AutoConstants.startToGardenContY, 0, color);
-            gardenTurnSeg1Start = pose(AutoConstants.gardenPollenX, AutoConstants.gardenPollenY, AutoConstants.gardenTurnSeg1StartHeading, color);
-            gardenTurnSeg1End = pose(AutoConstants.gardenPollenX, AutoConstants.gardenPollenY, AutoConstants.gardenTurnSeg1EndHeading, color);
-            gardenTurnSeg2Start = pose(AutoConstants.gardenPollenX, AutoConstants.gardenPollenY, AutoConstants.gardenTurnSeg2StartHeading, color);
-            gardenTurnSeg2End = pose(AutoConstants.gardenPollenX, AutoConstants.gardenPollenY, AutoConstants.gardenTurnSeg2EndHeading, color);
+            startPose = pose(AutoPoseData.startPose, color);
+            gardenPollenPose = pose(AutoPoseData.gardenPollenPose, color);
+            gardenTurnSeg1Start = pose(AutoPoseData.gardenTurnSeg1Start, color);
+            gardenTurnSeg1End = pose(AutoPoseData.gardenTurnSeg1End, color);
+            gardenTurnSeg2Start = pose(AutoPoseData.gardenTurnSeg2Start, color);
+            gardenTurnSeg2End = pose(AutoPoseData.gardenTurnSeg2End, color);
 
-            hiveLaunchPose1 = pose(AutoConstants.hiveLaunch1X, AutoConstants.hiveLaunch1Y, AutoConstants.hiveLaunch1Heading, color);
-            gardenToLaunch1Control = pose(AutoConstants.gardenToLaunch1ContX, AutoConstants.gardenToLaunch1ContY, 0, color);
-            launch1TurnStart = pose(AutoConstants.hiveLaunch1X, AutoConstants.hiveLaunch1Y, AutoConstants.launch1TurnStartHeading, color);
-            launch1TurnEnd = pose(AutoConstants.hiveLaunch1X, AutoConstants.hiveLaunch1Y, AutoConstants.launch1TurnEndHeading, color);
+            hiveLaunchPose1 = pose(AutoPoseData.hiveLaunchPose1, color);
+            gardenToLaunch1Control = pose(AutoPoseData.gardenToLaunch1Control, color);
+            launch1TurnStart = pose(AutoPoseData.launch1TurnStart, color);
+            launch1TurnEnd = pose(AutoPoseData.launch1TurnEnd, color);
 
-            flowerPose = pose(AutoConstants.flowerX, AutoConstants.flowerY, AutoConstants.flowerHeading, color);
-            launch1ToFlowerControl = pose(AutoConstants.launch1ToFlowerContX, AutoConstants.launch1ToFlowerContY, 0, color);
+            flowerPose = pose(AutoPoseData.flowerPose, color);
+            launch1ToFlowerControl = pose(AutoPoseData.launch1ToFlowerControl, color);
 
-            flowerDepartPose = pose(AutoConstants.flowerX, AutoConstants.flowerY, AutoConstants.flowerDepartHeading, color);
-            hiveLaunchPose2 = pose(AutoConstants.hiveLaunch2X, AutoConstants.hiveLaunch2Y, AutoConstants.hiveLaunch2Heading, color);
-            flowerToLaunch2Control = pose(AutoConstants.flowerToLaunch2ContX, AutoConstants.flowerToLaunch2ContY, 0, color);
+            flowerDepartPose = pose(AutoPoseData.flowerDepartPose, color);
+            hiveLaunchPose2 = pose(AutoPoseData.hiveLaunchPose2, color);
+            flowerToLaunch2Control = pose(AutoPoseData.flowerToLaunch2Control, color);
 
-            loadingZoneParkPose = pose(AutoConstants.loadingZoneParkX, AutoConstants.loadingZoneParkY, AutoConstants.loadingZoneParkHeading, color);
-            launch2ToParkControl1 = pose(AutoConstants.launch2ToParkCont1X, AutoConstants.launch2ToParkCont1Y, 0, color);
-            launch2ToParkControl2 = pose(AutoConstants.launch2ToParkCont2X, AutoConstants.launch2ToParkCont2Y, 0, color);
+            loadingZoneParkPose = pose(AutoPoseData.loadingZoneParkPose, color);
+            launch2ToParkControl1 = pose(AutoPoseData.launch2ToParkControl1, color);
+            launch2ToParkControl2 = pose(AutoPoseData.launch2ToParkControl2, color);
             robot.follower.setPose(startPose);
         }
 
-        private Pose pose(double x, double y, double headingDeg, String color) {
+        private Pose pose(Pose pose, String color) {
             return poseFactory.of(
-                    AutoPoseData.mirrorX(x, color),
-                    AutoPoseData.mirrorY(y, color),
-                    AutoPoseData.mirrorHeading(headingDeg, color));
+                    AutoPoseData.mirrorX(pose.x(), color),
+                    AutoPoseData.mirrorY(pose.y(), color),
+                    AutoPoseData.mirrorHeading(pose.heading(), color));
         }
 
         public Path startToGarden() {
