@@ -22,38 +22,37 @@ public class AutoConstants {
     public static double gardenTurnSeg2EndHeading = 270;
     public static double gardenTurnSplit = 0.4;
 
-    public static double hiveLaunch1X = 29.1104;
-    public static double hiveLaunch1Y = 26.4573;
-    public static double hiveLaunch1Heading = 180;
+    public static double gardenEndTValue = 0.4;
+    public static double launchEndTValue = 0.4;
 
-    public static double gardenToLaunch1ContX = 19.6698;
-    public static double gardenToLaunch1ContY = 24.8961;
+    public static double hiveLaunchX = 34.0983;
+    public static double hiveLaunchY = 107.577;
+    public static double hiveLaunchHeading = 42.5105;
 
-    public static double launch1TurnStartHeading = 270;
-    public static double launch1TurnEndHeading = 180;
+    public static double gardenToLaunchCont1X = 30.6957;
+    public static double gardenToLaunchCont1Y = 42.2226;
+    public static double gardenToLaunchCont2X = 4.7597;
+    public static double gardenToLaunchCont2Y = 81.3145;
 
-    public static double flowerX = 17.0844;
-    public static double flowerY = 47.6994;
-    public static double flowerHeading = -179.4716;
+    public static double launchTurnStartHeading = 270;
+    public static double launchTurnEndHeading = 110;
+    public static double launchTurnSplit = 0.5;
 
-    public static double launch1ToFlowerContX = 32.1466;
-    public static double launch1ToFlowerContY = 47.9462;
+    public static double launchDepartHeading = 19;
 
-    public static double flowerDepartHeading = 180;
+    public static double flowerX = 47.0464;
+    public static double flowerY = 124.2801;
+    public static double flowerHeading = 90;
 
-    public static double hiveLaunch2X = 29.4212;
-    public static double hiveLaunch2Y = 26.744;
-    public static double hiveLaunch2Heading = 130;
+    public static double launchToFlowerContX = 44.461;
+    public static double launchToFlowerContY = 110.4564;
 
-    public static double flowerToLaunch2ContX = 32.1364;
-    public static double flowerToLaunch2ContY = 47.5751;
+    public static double loadingZoneParkX = 12.872;
+    public static double loadingZoneParkY = 106.9397;
+    public static double loadingZoneParkHeading = -11.291;
 
-    public static double loadingZoneParkX = 9.0065;
-    public static double loadingZoneParkY = 101.5751;
-    public static double loadingZoneParkHeading = -89.8669;
-
-    public static double launch2ToParkCont1X = 35.0686;
-    public static double launch2ToParkCont1Y = 76.9035;
-    public static double launch2ToParkCont2X = 8.8599;
-    public static double launch2ToParkCont2Y = 51.3108;
+    public static double flowerToParkCont1X = 31.2746;
+    public static double flowerToParkCont1Y = 120.3321;
+    public static double flowerToParkCont2X = 27.2208;
+    public static double flowerToParkCont2Y = 103.9017;
 }
