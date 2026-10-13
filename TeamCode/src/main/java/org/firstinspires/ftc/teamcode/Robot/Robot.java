@@ -82,6 +82,7 @@ public class Robot {
     public void update(){
         CommandScheduler.getInstance().run();
         follower.update();
+        Telem.update();
         currentPose = follower.pose();
 
         if(intake != null)
