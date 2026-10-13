@@ -4,6 +4,7 @@ import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -19,6 +20,7 @@ import org.firstinspires.ftc.teamcode.Utils.Constants.BotConstants;
 import org.firstinspires.ftc.teamcode.Utils.Constants.HardwareMapNames;
 import org.firstinspires.ftc.teamcode.Utils.Constants.TurretConstants;
 import org.firstinspires.ftc.teamcode.Utils.Telem;
+import org.firstinspires.ftc.teamcode.Vision.BallTracker;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 import java.util.List;
@@ -30,6 +32,7 @@ public class Robot {
     public Turret turret;
     public Follower follower;
     public Blocker blocker;
+    public Limelight3A limelight; // null if not in the active hardware config
     DcMotorEx intakeMotor, transferMotor;
     DcMotorEx shooterMotor, shooterMotor2;
     RevColorSensorV3 sensorV3;
@@ -74,6 +77,12 @@ public class Robot {
         turret = new Turret(turretServoOne, turretServoTwo);
         follower = Constants.create(map);
 
+        limelight = map.tryGet(Limelight3A.class, HardwareMapNames.limelightConfig);
+        if (limelight != null) {
+            limelight.pipelineSwitch(BallTracker.PIPELINE);
+            limelight.start();
+        }
+
         Telem.init(tel);
         CommandScheduler.getInstance().reset();
         CommandScheduler.getInstance().registerSubsystem(intake, shooter, blocker, turret);
@@ -101,6 +110,7 @@ public class Robot {
 
     public void stop(){
         Pose pose = follower.pose();
+        if (limelight != null) limelight.stop();
         CommandScheduler.getInstance().reset();
         for (LynxModule hub : hubs){
             hub.clearBulkCache();

@@ -16,6 +16,7 @@ public class HardwareMapNames {
     public static String compressionServoConfig = "compressionServo";
     public static String flowerRampConfig = "flowerRamp";
     public static String shooterSensorConfig = "shooterSensor";
+    public static String limelightConfig = "limelight";
 
 
 
