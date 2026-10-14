@@ -6,10 +6,11 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.pedropathing.paths.Path;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.Utils.Constants.BallChaseFollowerConstants;
+import org.firstinspires.ftc.teamcode.Utils.Constants.BallTrackerConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,47 +20,6 @@ public class BallChaseFollower {
 
     public enum State { IDLE, SCAN, TRAVEL, TURN, CHASE, PICKUP, DONE }
 
-    private static final double CAM_FWD_OFFSET  = 0.0;
-    private static final double CAM_LEFT_OFFSET = 0.0;
-    private static final double HFOV_DEG        = 54.5;
-    private static final double VFOV_DEG        = 42.0;
-    private static final double FOV_MARGIN_DEG  = 4.0;
-
-    public static double MAX_PLAN_RANGE    = 40.0;
-    public static double MERGE_RADIUS      = 4.0;
-    public static double APPROACH_DIST     = 24.0;
-    public static double CLEAR_RADIUS      = 12.0;
-    public static double FIELD_MIN         = 6.0;
-    public static double FIELD_MAX         = 138.0;
-    public static long   TRAVEL_TIMEOUT_MS = 4000;
-
-    public static long   SETTLE_MS        = 250;
-    public static long   SCAN_MS          = 250;
-    public static double SEARCH_STEP_DEG  = 45.0;
-    public static int    SEARCH_MAX_STEPS = 8;
-
-    public static double TURN_TO_KP      = 0.8;
-    public static double TURN_TO_MIN     = 0.12;
-    public static double TURN_TO_MAX     = 0.5;
-    public static double TURN_TO_TOL_DEG = 4.0;
-    public static long   TURN_TIMEOUT_MS = 2500;
-
-    public static double STOP_DIST      = 16.0;
-    public static double AIM_TOL_DEG    = 5.0;
-    public static double DRIVE_MIN_TX   = 15.0;
-    public static double DRIVE_KP       = 0.03;
-    public static double MIN_FWD        = 0.15;
-    public static double MAX_FWD        = 0.7;
-    public static double TURN_KP        = 0.025;
-    public static double MIN_TURN       = 0.08;
-    public static double MAX_TURN       = 0.6;
-    public static double COAST_MAX_DIST = 26.0;
-    public static double COAST_POWER    = 0.25;
-    public static long   COAST_MS       = 450;
-    public static long   LOST_MS        = 500;
-    public static long   PICKUP_DWELL_MS = 600;
-    public static double INTAKE_POWER    = 1.0;
-
     private static class Ball {
         double x, y;
         int n = 1;
@@ -68,7 +28,6 @@ public class BallChaseFollower {
 
     private final Follower follower;
     private final BallTracker tracker;
-    private final DcMotor intake;
 
     private State state = State.IDLE;
     private State afterTurn = State.SCAN;
@@ -77,6 +36,10 @@ public class BallChaseFollower {
     private List<Ball> memory = new ArrayList<>();
     private final List<Ball> samples = new ArrayList<>();
     private Ball currentTarget = null;
+
+    private List<Pose> visibleBalls = new ArrayList<>();
+    private double ballDistance = Double.POSITIVE_INFINITY;
+    private BallTracker.Sighting sighting;
 
     private final ElapsedTime stateTimer = new ElapsedTime();
     private final ElapsedTime lastSeen = new ElapsedTime();
@@ -92,16 +55,15 @@ public class BallChaseFollower {
     private int searchSteps = 0;
     private double budgetSec = Double.MAX_VALUE;
 
-    public BallChaseFollower(Follower follower, BallTracker tracker, DcMotor intakeOrNull) {
+    public BallChaseFollower(Follower follower, BallTracker tracker) {
         if (follower == null) throw new IllegalArgumentException(
                 "BallChaseFollower: follower is null - pass in your Pedro Follower");
         this.follower = follower;
         this.tracker = tracker;
-        this.intake = intakeOrNull;
     }
 
-    public BallChaseFollower(Follower follower, Limelight3A limelight, DcMotor intakeOrNull) {
-        this(follower, new BallTracker(limelight), intakeOrNull);
+    public BallChaseFollower(Follower follower, Limelight3A limelight) {
+        this(follower, new BallTracker(limelight));
     }
 
     public void setAllowedClasses(Set<Integer> classes) { tracker.setAllowedClasses(classes); }
@@ -128,7 +90,6 @@ public class BallChaseFollower {
         follower.stop();
         follower.manual(DrivePowers.zero());
         teleop = true;
-        setIntake(0);
         drive(0, 0, 0);
         state = State.IDLE;
     }
@@ -162,21 +123,51 @@ public class BallChaseFollower {
         }
     }
 
-    public List<Pose> seeBalls() {
+    public void updateVision() {
+        sighting = tracker.update();
         Pose robot = follower.pose();
-        List<Pose> out = new ArrayList<>();
+        List<Pose> balls = new ArrayList<>();
+        double closest = Double.POSITIVE_INFINITY;
         List<BallTracker.RawDet> dets = tracker.getGatedDetections();
-        if (dets == null) return out;
-        for (BallTracker.RawDet d : dets) {
-            double[] p = project(d.txDeg, d.tyDeg, robot);
-            if (p == null) continue;
-            double facing = Math.atan2(p[1] - robot.y(), p[0] - robot.x());
-            out.add(new Pose(p[0], p[1], facing));
+        if (dets != null) {
+            for (BallTracker.RawDet d : dets) {
+                closest = Math.min(closest, cameraRange(d.txDeg, d.tyDeg));
+                double[] p = project(d.txDeg, d.tyDeg, robot);
+                if (p == null) continue;
+                double facing = Math.atan2(p[1] - robot.y(), p[0] - robot.x());
+                balls.add(new Pose(p[0], p[1], facing));
+            }
+            java.util.Collections.sort(balls, (a, b) -> Double.compare(
+                    Math.hypot(a.x() - robot.x(), a.y() - robot.y()),
+                    Math.hypot(b.x() - robot.x(), b.y() - robot.y())));
         }
-        java.util.Collections.sort(out, (a, b) -> Double.compare(
-                Math.hypot(a.x() - robot.x(), a.y() - robot.y()),
-                Math.hypot(b.x() - robot.x(), b.y() - robot.y())));
-        return out;
+        visibleBalls = balls;
+        ballDistance = closest;
+    }
+
+    public List<Pose> seeBalls() {
+        return visibleBalls;
+    }
+
+    public double distanceToBall() {
+        return ballDistance;
+    }
+
+    public BallTracker.Sighting getSighting() {
+        return sighting;
+    }
+
+    private double cameraRange(double txDeg, double tyDeg) {
+        double p = Math.toRadians(BallTrackerConstants.camPitchDeg);
+        double h = BallTrackerConstants.camHeight - BallTrackerConstants.ballHeight;
+        double tanTx = Math.tan(Math.toRadians(txDeg));
+        double tanTy = Math.tan(Math.toRadians(tyDeg));
+        double denom = Math.sin(p) - tanTy * Math.cos(p);
+        if (denom <= 0.02) return Double.POSITIVE_INFINITY;
+        double s = h / denom;
+        double forward = s * (Math.cos(p) + tanTy * Math.sin(p));
+        double left = -s * tanTx;
+        return Math.hypot(forward, left);
     }
 
     public Pose nearestBall() {
@@ -193,12 +184,11 @@ public class BallChaseFollower {
 
     private void doScan() {
         drive(0, 0, 0);
-        setIntake(0);
         double t = stateTimer.milliseconds();
-        if (t < SETTLE_MS) return;
+        if (t < BallChaseFollowerConstants.settleMs) return;
 
         Pose pose = follower.pose();
-        if (t < SETTLE_MS + SCAN_MS) {
+        if (t < BallChaseFollowerConstants.settleMs + BallChaseFollowerConstants.scanMs) {
             sampleDetections(pose);
             return;
         }
@@ -207,7 +197,7 @@ public class BallChaseFollower {
 
     private void sampleDetections(Pose pose) {
 
-        if (tracker.getStalenessMs() > stateTimer.milliseconds() - SETTLE_MS) return;
+        if (tracker.getStalenessMs() > stateTimer.milliseconds() - BallChaseFollowerConstants.settleMs) return;
 
         List<BallTracker.RawDet> dets = tracker.getGatedDetections();
         if (dets == null) return;
@@ -215,14 +205,14 @@ public class BallChaseFollower {
         for (BallTracker.RawDet d : dets) {
             double[] p = project(d.txDeg, d.tyDeg, pose);
             if (p == null) continue;
-            if (Math.hypot(p[0] - pose.x(), p[1] - pose.y()) > MAX_PLAN_RANGE) continue;
+            if (Math.hypot(p[0] - pose.x(), p[1] - pose.y()) > BallChaseFollowerConstants.maxPlanRange) continue;
             addSample(p[0], p[1]);
         }
     }
 
     private void addSample(double x, double y) {
         for (Ball b : samples) {
-            if (Math.hypot(b.x - x, b.y - y) < MERGE_RADIUS) {
+            if (Math.hypot(b.x - x, b.y - y) < BallChaseFollowerConstants.mergeRadius) {
                 b.x = (b.x * b.n + x) / (b.n + 1);
                 b.y = (b.y * b.n + y) / (b.n + 1);
                 b.n++;
@@ -245,9 +235,9 @@ public class BallChaseFollower {
 
         Ball target = nearest(memory, pose);
         if (target == null) {
-            if (searchSteps >= SEARCH_MAX_STEPS) { finish(); return; }
+            if (searchSteps >= BallChaseFollowerConstants.searchMaxSteps) { finish(); return; }
             searchSteps++;
-            startTurn(pose.heading() + Math.toRadians(SEARCH_STEP_DEG), State.SCAN);
+            startTurn(pose.heading() + Math.toRadians(BallChaseFollowerConstants.searchStepDeg), State.SCAN);
             return;
         }
 
@@ -258,7 +248,7 @@ public class BallChaseFollower {
         double dist = Math.hypot(dx, dy);
         double heading = Math.atan2(dy, dx);
 
-        if (dist > APPROACH_DIST + 4.0) {
+        if (dist > BallChaseFollowerConstants.approachDist + 4.0) {
             startTravel(pose, target, heading);
         } else {
             startTurn(heading, State.CHASE);
@@ -266,8 +256,8 @@ public class BallChaseFollower {
     }
 
     private void startTravel(Pose pose, Ball target, double heading) {
-        double ax = Range.clip(target.x - APPROACH_DIST * Math.cos(heading), FIELD_MIN, FIELD_MAX);
-        double ay = Range.clip(target.y - APPROACH_DIST * Math.sin(heading), FIELD_MIN, FIELD_MAX);
+        double ax = Range.clip(target.x - BallChaseFollowerConstants.approachDist * Math.cos(heading), BallChaseFollowerConstants.fieldMin, BallChaseFollowerConstants.fieldMax);
+        double ay = Range.clip(target.y - BallChaseFollowerConstants.approachDist * Math.sin(heading), BallChaseFollowerConstants.fieldMin, BallChaseFollowerConstants.fieldMax);
 
         if (Math.hypot(ax - pose.x(), ay - pose.y()) < 3.0) {
             startTurn(heading, State.CHASE);
@@ -284,10 +274,9 @@ public class BallChaseFollower {
     }
 
     private void doTravel() {
-        setIntake(0);
         if (!follower.isBusy()) {
             enter(State.CHASE);
-        } else if (stateTimer.milliseconds() > TRAVEL_TIMEOUT_MS) {
+        } else if (stateTimer.milliseconds() > BallChaseFollowerConstants.travelTimeoutMs) {
             follower.stop();
             teleop = false;
             enter(State.SCAN);
@@ -301,16 +290,15 @@ public class BallChaseFollower {
     }
 
     private void doTurn() {
-        setIntake(0);
         double err = wrap(turnTarget - follower.pose().heading());
-        if (Math.abs(err) < Math.toRadians(TURN_TO_TOL_DEG)
-                || stateTimer.milliseconds() > TURN_TIMEOUT_MS) {
+        if (Math.abs(err) < Math.toRadians(BallChaseFollowerConstants.turnToTolDeg)
+                || stateTimer.milliseconds() > BallChaseFollowerConstants.turnTimeoutMs) {
             drive(0, 0, 0);
             enter(afterTurn);
             return;
         }
-        double cmd = Range.clip(err * TURN_TO_KP, -TURN_TO_MAX, TURN_TO_MAX);
-        if (Math.abs(cmd) < TURN_TO_MIN) cmd = Math.copySign(TURN_TO_MIN, err);
+        double cmd = Range.clip(err * BallChaseFollowerConstants.turnToKp, -BallChaseFollowerConstants.turnToMax, BallChaseFollowerConstants.turnToMax);
+        if (Math.abs(cmd) < BallChaseFollowerConstants.turnToMin) cmd = Math.copySign(BallChaseFollowerConstants.turnToMin, err);
         drive(0, 0, cmd);
     }
 
@@ -330,48 +318,45 @@ public class BallChaseFollower {
             double[] p = project(tx, ty, pose);
             if (p != null) { lastChaseX = p[0]; lastChaseY = p[1]; haveChaseBall = true; }
 
-            boolean aimed = Math.abs(tx) < AIM_TOL_DEG;
-            if (dist <= STOP_DIST && aimed) {
+            boolean aimed = Math.abs(tx) < BallChaseFollowerConstants.aimTolDeg;
+            if (dist <= BallChaseFollowerConstants.stopDist && aimed) {
                 drive(0, 0, 0);
                 enter(State.PICKUP);
                 return;
             }
 
-            double turn = Range.clip(-tx * TURN_KP, -MAX_TURN, MAX_TURN);
-            if (!aimed && Math.abs(turn) < MIN_TURN) turn = Math.copySign(MIN_TURN, -tx);
+            double turn = Range.clip(-tx * BallChaseFollowerConstants.turnKp, -BallChaseFollowerConstants.maxTurn, BallChaseFollowerConstants.maxTurn);
+            if (!aimed && Math.abs(turn) < BallChaseFollowerConstants.minTurn) turn = Math.copySign(BallChaseFollowerConstants.minTurn, -tx);
 
             double fwd = 0.0;
-            if (dist > STOP_DIST && Math.abs(tx) < DRIVE_MIN_TX) {
-                fwd = Range.clip((dist - STOP_DIST) * DRIVE_KP, MIN_FWD, MAX_FWD);
+            if (dist > BallChaseFollowerConstants.stopDist && Math.abs(tx) < BallChaseFollowerConstants.driveMinTx) {
+                fwd = Range.clip((dist - BallChaseFollowerConstants.stopDist) * BallChaseFollowerConstants.driveKp, BallChaseFollowerConstants.minFwd, BallChaseFollowerConstants.maxFwd);
             }
-            setIntake(INTAKE_POWER);
             drive(fwd, 0, turn);
             return;
         }
 
         if (s != null) {
 
-            boolean wasClose = lastSeenDist <= COAST_MAX_DIST;
+            boolean wasClose = lastSeenDist <= BallChaseFollowerConstants.coastMaxDist;
             if (wasClose) {
-                if (lastSeen.milliseconds() < COAST_MS) {
-                    setIntake(INTAKE_POWER);
-                    drive(COAST_POWER, 0, 0);
+                if (lastSeen.milliseconds() < BallChaseFollowerConstants.coastMs) {
+                    drive(BallChaseFollowerConstants.coastPower, 0, 0);
                     return;
                 }
                 drive(0, 0, 0);
                 enter(State.PICKUP);
                 return;
             }
-            double turn = Range.clip(-s.txDeg * TURN_KP, -MAX_TURN, MAX_TURN);
-            if (Math.abs(turn) < MIN_TURN) turn = Math.copySign(MIN_TURN, -s.txDeg);
+            double turn = Range.clip(-s.txDeg * BallChaseFollowerConstants.turnKp, -BallChaseFollowerConstants.maxTurn, BallChaseFollowerConstants.maxTurn);
+            if (Math.abs(turn) < BallChaseFollowerConstants.minTurn) turn = Math.copySign(BallChaseFollowerConstants.minTurn, -s.txDeg);
             drive(0, 0, turn);
             return;
         }
 
-        if (chaseSawBall && lastSeenDist <= COAST_MAX_DIST) {
-            if (lastSeen.milliseconds() < COAST_MS) {
-                setIntake(INTAKE_POWER);
-                drive(COAST_POWER, 0, 0);
+        if (chaseSawBall && lastSeenDist <= BallChaseFollowerConstants.coastMaxDist) {
+            if (lastSeen.milliseconds() < BallChaseFollowerConstants.coastMs) {
+                drive(BallChaseFollowerConstants.coastPower, 0, 0);
             } else {
                 drive(0, 0, 0);
                 enter(State.PICKUP);
@@ -380,7 +365,7 @@ public class BallChaseFollower {
         }
 
         drive(0, 0, 0);
-        if (lastSeen.milliseconds() > LOST_MS) {
+        if (lastSeen.milliseconds() > BallChaseFollowerConstants.lostMs) {
             if (currentTarget != null) memory.remove(currentTarget);
             enter(State.SCAN);
         }
@@ -388,8 +373,7 @@ public class BallChaseFollower {
 
     private void doPickup() {
         drive(0, 0, 0);
-        setIntake(INTAKE_POWER);
-        if (stateTimer.milliseconds() < PICKUP_DWELL_MS) return;
+        if (stateTimer.milliseconds() < BallChaseFollowerConstants.pickupDwellMs) return;
 
         pickups++;
         double cx, cy;
@@ -401,7 +385,7 @@ public class BallChaseFollower {
         if (haveCoords) {
             for (int i = memory.size() - 1; i >= 0; i--) {
                 Ball b = memory.get(i);
-                if (Math.hypot(b.x - cx, b.y - cy) < CLEAR_RADIUS) memory.remove(i);
+                if (Math.hypot(b.x - cx, b.y - cy) < BallChaseFollowerConstants.clearRadius) memory.remove(i);
             }
         }
         if (currentTarget != null) memory.remove(currentTarget);
@@ -418,13 +402,12 @@ public class BallChaseFollower {
         follower.manual(DrivePowers.zero());
         teleop = true;
         drive(0, 0, 0);
-        setIntake(0);
         state = State.DONE;
     }
 
     private double[] project(double txDeg, double tyDeg, Pose pose) {
-        double p = Math.toRadians(BallTracker.CAM_PITCH_DEG);
-        double h = BallTracker.CAM_H - BallTracker.BALL_H;
+        double p = Math.toRadians(BallTrackerConstants.camPitchDeg);
+        double h = BallTrackerConstants.camHeight - BallTrackerConstants.ballHeight;
         double tanTx = Math.tan(Math.toRadians(txDeg));
         double tanTy = Math.tan(Math.toRadians(tyDeg));
 
@@ -432,8 +415,8 @@ public class BallChaseFollower {
         if (denom <= 0.02) return null;
         double s = h / denom;
 
-        double xr = s * (Math.cos(p) + tanTy * Math.sin(p)) + CAM_FWD_OFFSET;
-        double yr = -s * tanTx + CAM_LEFT_OFFSET;
+        double xr = s * (Math.cos(p) + tanTy * Math.sin(p)) + BallTrackerConstants.camXOffset;
+        double yr = -s * tanTx + BallTrackerConstants.camYOffset;
 
         double th = pose.heading();
         double fx = pose.x() + xr * Math.cos(th) - yr * Math.sin(th);
@@ -448,12 +431,12 @@ public class BallChaseFollower {
         double xr =  dxw * Math.cos(th) + dyw * Math.sin(th);
         double yr = -dxw * Math.sin(th) + dyw * Math.cos(th);
 
-        double dx = xr - CAM_FWD_OFFSET;
-        double dy = yr - CAM_LEFT_OFFSET;
-        if (Math.hypot(dx, dy) > MAX_PLAN_RANGE) return false;
+        double dx = xr - BallTrackerConstants.camXOffset;
+        double dy = yr - BallTrackerConstants.camYOffset;
+        if (Math.hypot(dx, dy) > BallChaseFollowerConstants.maxPlanRange) return false;
 
-        double p = Math.toRadians(BallTracker.CAM_PITCH_DEG);
-        double h = BallTracker.CAM_H - BallTracker.BALL_H;
+        double p = Math.toRadians(BallTrackerConstants.camPitchDeg);
+        double h = BallTrackerConstants.camHeight - BallTrackerConstants.ballHeight;
         double zc = dx * Math.cos(p) + h * Math.sin(p);
         if (zc <= 0) return false;
         double xc = -dy;
@@ -461,8 +444,8 @@ public class BallChaseFollower {
 
         double txp = Math.toDegrees(Math.atan2(xc, zc));
         double typ = Math.toDegrees(Math.atan2(yc, zc));
-        return Math.abs(txp) < HFOV_DEG / 2 - FOV_MARGIN_DEG
-                && Math.abs(typ) < VFOV_DEG / 2 - FOV_MARGIN_DEG;
+        return Math.abs(txp) < BallTrackerConstants.hfovDeg / 2 - BallTrackerConstants.fovMarginDeg
+                && Math.abs(typ) < BallTrackerConstants.vfovDeg / 2 - BallTrackerConstants.fovMarginDeg;
     }
 
     private Ball nearest(List<Ball> list, Pose pose) {
@@ -493,10 +476,6 @@ public class BallChaseFollower {
 
     private void drive(double fwd, double strafe, double turn) {
         follower.manual(new DrivePowers(fwd, strafe, turn));
-    }
-
-    private void setIntake(double power) {
-        if (intake != null) intake.setPower(power);
     }
 
     private static double wrap(double a) {

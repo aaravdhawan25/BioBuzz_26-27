@@ -5,6 +5,8 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Utils.Constants.BallTrackerConstants;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -12,23 +14,11 @@ import java.util.Set;
 
 public class BallTracker {
 
-    public static double CAM_PITCH_DEG = 25.0;
-    public static double CAM_H         = 9.2;
-    public static double BALL_H        = 3.0;
-    public static double CAM_X_OFFSET  = 0.0;
-    public static double CAM_Y_OFFSET  = 0.0;
-
     public static final int CLASS_YELLOW_NEUTRAL = 0;
     public static final int CLASS_RED            = 1;
     public static final int CLASS_BLUE           = 2;
     public static final Set<Integer> CLASSES_RED_BLUE = setOf(CLASS_RED, CLASS_BLUE);
     public static final Set<Integer> CLASSES_ALL      = setOf(CLASS_RED, CLASS_BLUE, CLASS_YELLOW_NEUTRAL);
-
-    public static double MIN_CONF   = 0.44;
-    public static long   MAX_STALENESS_MS = 120;
-
-    public static double LOCK_GATE_DEG = 12.0;
-    public static long   LOCK_LOST_MS  = 300;
 
     public static class Sighting {
         public final int    classId;
@@ -147,27 +137,27 @@ public class BallTracker {
     }
 
     public List<RawDet> getGatedDetections() {
-        if (source.stalenessMs() > MAX_STALENESS_MS) return null;
+        if (source.stalenessMs() > BallTrackerConstants.maxStalenessMs) return null;
         List<RawDet> dets = source.latest();
         if (dets == null || dets.isEmpty()) return null;
 
         List<RawDet> out = new java.util.ArrayList<>();
         for (RawDet d : dets) {
             if (!allowed.contains(d.classId)) continue;
-            if (d.confidence < MIN_CONF) continue;
+            if (d.confidence < BallTrackerConstants.minConfidence) continue;
             out.add(d);
         }
         return out;
     }
 
     public List<RawDet> getConfidentResults() {
-        if (source.stalenessMs() > MAX_STALENESS_MS) return null;
+        if (source.stalenessMs() > BallTrackerConstants.maxStalenessMs) return null;
         List<RawDet> dets = source.latest();
         if (dets == null || dets.isEmpty()) return null;
 
         List<RawDet> out = new java.util.ArrayList<>();
         for (RawDet d : dets) {
-            if (d.confidence < MIN_CONF) continue;
+            if (d.confidence < BallTrackerConstants.minConfidence) continue;
             out.add(d);
         }
         return out;
@@ -182,13 +172,13 @@ public class BallTracker {
     }
 
     public double groundRange(double tyDeg) {
-        double depression = CAM_PITCH_DEG - tyDeg;
+        double depression = BallTrackerConstants.camPitchDeg - tyDeg;
         if (depression < 1.0) return 999.0;
-        return (CAM_H - BALL_H) / Math.tan(Math.toRadians(depression));
+        return (BallTrackerConstants.camHeight - BallTrackerConstants.ballHeight) / Math.tan(Math.toRadians(depression));
     }
 
     private Sighting compute() {
-        List<RawDet> dets = source.stalenessMs() > MAX_STALENESS_MS ? null : source.latest();
+        List<RawDet> dets = source.stalenessMs() > BallTrackerConstants.maxStalenessMs ? null : source.latest();
 
         if (dets == null || dets.isEmpty()) {
             return coastOrDrop();
@@ -201,7 +191,7 @@ public class BallTracker {
         for (RawDet d : dets) {
             if (!allowed.contains(d.classId)) continue;
             if (lockClass != null && d.classId != lockClass) continue;
-            if (d.confidence < MIN_CONF) continue;
+            if (d.confidence < BallTrackerConstants.minConfidence) continue;
 
             if (nearest == null || d.tyDeg < nearest.tyDeg) {
                 nearest = d;
@@ -217,10 +207,10 @@ public class BallTracker {
 
         if (nearest == null) return coastOrDrop();
 
-        if (lockTx != null && lockMatch != null && bestJump <= LOCK_GATE_DEG) {
+        if (lockTx != null && lockMatch != null && bestJump <= BallTrackerConstants.lockGateDeg) {
             return adopt(lockMatch);
         }
-        if (locked != null && lockAge.milliseconds() <= LOCK_LOST_MS) {
+        if (locked != null && lockAge.milliseconds() <= BallTrackerConstants.lockLostMs) {
             return lockedPredicted();
         }
         return adopt(nearest);
@@ -243,7 +233,7 @@ public class BallTracker {
     }
 
     private Sighting coastOrDrop() {
-        if (locked != null && lockAge.milliseconds() <= LOCK_LOST_MS) {
+        if (locked != null && lockAge.milliseconds() <= BallTrackerConstants.lockLostMs) {
             return lockedPredicted();
         }
         dropLock();

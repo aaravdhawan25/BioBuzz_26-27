@@ -8,6 +8,7 @@ import org.firstinspires.ftc.teamcode.Utils.Constants.FieldPlannerConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class FieldPlanner {
@@ -187,6 +188,82 @@ public class FieldPlanner {
             }
         }
         return best;
+    }
+
+    public static class Target {
+        public final Pose entry;
+        public final Pose exit;
+        public final int balls;
+        public final double score;
+
+        Target(Pose entry, Pose exit, int balls, double score) {
+            this.entry = entry;
+            this.exit = exit;
+            this.balls = balls;
+            this.score = score;
+        }
+    }
+
+    public static Target bestTarget(Pose robot, List<Pose> balls, double stopShort) {
+        return bestTarget(robot, balls, stopShort, FieldPlannerConstants.intakeCapacity);
+    }
+
+    public static Target bestTarget(Pose robot, List<Pose> balls, double stopShort, int maxBalls) {
+        Target best = null;
+        int limit = Math.min(maxBalls, FieldPlannerConstants.intakeCapacity);
+        if (limit < 1) return null;
+
+        Pose single = bestApproach(robot, balls, stopShort);
+        if (single != null) {
+            List<double[]> pts = route(robot.x(), robot.y(), single.x(), single.y());
+            double cost = length(pts) + turnCost(robot.heading(), single.heading()) + FieldPlannerConstants.tripOverhead;
+            best = new Target(single, null, 1, cost);
+        }
+
+        for (int i = 0; i < balls.size(); i++) {
+            for (int j = 0; j < balls.size(); j++) {
+                if (i == j) continue;
+                Pose a = balls.get(i), b = balls.get(j);
+                double len = Math.hypot(b.x() - a.x(), b.y() - a.y());
+                if (len < 1e-3 || len > FieldPlannerConstants.maxSweepLength) continue;
+                double ux = (b.x() - a.x()) / len, uy = (b.y() - a.y()) / len;
+
+                List<double[]> covered = new ArrayList<>();
+                for (Pose k : balls) {
+                    double t = (k.x() - a.x()) * ux + (k.y() - a.y()) * uy;
+                    double side = -(k.x() - a.x()) * uy + (k.y() - a.y()) * ux;
+                    if (t >= -0.5 && t <= len + 0.5 && Math.abs(side) <= FieldPlannerConstants.intakeHalfWidth) {
+                        covered.add(new double[]{t});
+                    }
+                }
+                Collections.sort(covered, (p, q) -> Double.compare(p[0], q[0]));
+                int count = Math.min(covered.size(), limit);
+                if (count < 2) continue;
+                double tLast = covered.get(count - 1)[0];
+
+                double h = Math.atan2(uy, ux);
+                double ex = a.x() - stopShort * ux, ey = a.y() - stopShort * uy;
+                double xx = a.x() + (tLast - stopShort) * ux, xy = a.y() + (tLast - stopShort) * uy;
+                if (blocked(ex, ey) || !onField(ex, ey) || blocked(xx, xy) || !onField(xx, xy)) continue;
+                if (!segmentClear(ex, ey, xx, xy)) continue;
+                List<double[]> pts = route(robot.x(), robot.y(), ex, ey);
+                if (pts == null) continue;
+
+                double cost = length(pts) + turnCost(robot.heading(), h) + tLast + FieldPlannerConstants.tripOverhead;
+                double score = cost / count;
+                if (best == null || score < best.score) {
+                    best = new Target(new Pose(ex, ey, h), new Pose(xx, xy, h), count, score);
+                }
+            }
+        }
+        return best;
+    }
+
+    public static Path planTarget(Pose start, Target target) {
+        Path toEntry = plan(start, target.entry);
+        if (toEntry == null || target.exit == null) return toEntry;
+        Path sweep = Paths.line(target.entry, target.exit).constant(target.entry.heading());
+        return Paths.path(toEntry, sweep);
     }
 
     private static double turnCost(double from, double to) {

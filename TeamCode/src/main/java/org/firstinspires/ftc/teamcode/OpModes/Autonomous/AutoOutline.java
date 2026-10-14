@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.OpModes.Autonomous;
 
 import com.arcrobotics.ftclib.command.CommandScheduler;
+import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.ParallelCommandGroup;
 import com.arcrobotics.ftclib.command.SequentialCommandGroup;
 import com.arcrobotics.ftclib.command.WaitCommand;
@@ -51,6 +52,7 @@ public class AutoOutline extends OpMode {
 
         autonomous = new SequentialCommandGroup(
                 shootFour(),
+                new InstantCommand(robot::flipGoal),
                 intake(paths.startToGarden()),
                 new FollowPathCommand(robot.follower, paths.gardenToLaunch()),
                 shootFour(),
