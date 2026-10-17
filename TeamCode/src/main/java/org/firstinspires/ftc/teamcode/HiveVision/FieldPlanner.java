@@ -205,13 +205,7 @@ public class FieldPlanner {
     }
 
     public static Target bestTarget(Pose robot, List<Pose> balls, double stopShort) {
-        return bestTarget(robot, balls, stopShort, FieldPlannerConstants.intakeCapacity);
-    }
-
-    public static Target bestTarget(Pose robot, List<Pose> balls, double stopShort, int maxBalls) {
         Target best = null;
-        int limit = Math.min(maxBalls, FieldPlannerConstants.intakeCapacity);
-        if (limit < 1) return null;
 
         Pose single = bestApproach(robot, balls, stopShort);
         if (single != null) {
@@ -237,7 +231,7 @@ public class FieldPlanner {
                     }
                 }
                 Collections.sort(covered, (p, q) -> Double.compare(p[0], q[0]));
-                int count = Math.min(covered.size(), limit);
+                int count = Math.min(covered.size(), FieldPlannerConstants.intakeCapacity);
                 if (count < 2) continue;
                 double tLast = covered.get(count - 1)[0];
 
