@@ -5,12 +5,12 @@ import static org.firstinspires.ftc.teamcode.Utils.Constants.ShooterConstants.kF
 import static org.firstinspires.ftc.teamcode.Utils.Constants.ShooterConstants.kI;
 import static org.firstinspires.ftc.teamcode.Utils.Constants.ShooterConstants.kP;
 
-import com.arcrobotics.ftclib.command.Subsystem;
-import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
+import com.seattlesolvers.solverslib.command.Subsystem;
+import com.seattlesolvers.solverslib.controller.PIDFController;
 
 import org.firstinspires.ftc.teamcode.Robot.Robot;
 import org.firstinspires.ftc.teamcode.Utils.Constants.ShooterConstants;

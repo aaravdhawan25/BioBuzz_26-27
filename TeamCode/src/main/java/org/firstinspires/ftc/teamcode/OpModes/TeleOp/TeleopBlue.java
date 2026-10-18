@@ -1,14 +1,15 @@
 package org.firstinspires.ftc.teamcode.OpModes.TeleOp;
 
-import com.arcrobotics.ftclib.command.CommandScheduler;
-import com.arcrobotics.ftclib.command.InstantCommand;
-import com.arcrobotics.ftclib.command.ParallelCommandGroup;
-import com.arcrobotics.ftclib.command.SequentialCommandGroup;
-import com.arcrobotics.ftclib.gamepad.GamepadEx;
-import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+
 import com.pedropathing.follower.ManualDrive;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.seattlesolvers.solverslib.command.CommandScheduler;
+import com.seattlesolvers.solverslib.command.InstantCommand;
+import com.seattlesolvers.solverslib.command.ParallelCommandGroup;
+import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
+import com.seattlesolvers.solverslib.gamepad.GamepadEx;
+import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 
 import org.firstinspires.ftc.teamcode.Robot.Commands.BlockerCommand;
 import org.firstinspires.ftc.teamcode.Robot.Commands.IntakeCommand;
@@ -49,10 +50,6 @@ public class TeleopBlue extends LinearOpMode {
                 new IntakeCommand(robot, Intake.IntakeStates.OFF)
         );
 
-
-        gp2.getGamepadButton(GamepadKeys.Button.DPAD_DOWN).whenPressed(
-                new InstantCommand(robot::flipGoal)
-        );
         gp2.getGamepadButton(GamepadKeys.Button.Y).whenPressed(
                 new ParallelCommandGroup(
                         new ShooterCommand(robot, Shooter.ShooterStates.ON),

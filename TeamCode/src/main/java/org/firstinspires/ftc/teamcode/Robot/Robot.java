@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.Robot;
 
-import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
@@ -9,6 +8,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.seattlesolvers.solverslib.command.CommandScheduler;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Blocker;
@@ -40,7 +40,6 @@ public class Robot {
     String color;
     boolean isAuto;
     boolean holding;
-    public static boolean startSide;
     public static boolean isRed;
     public static Pose currentPose = new Pose(0,0,0);
     public Robot(HardwareMap map, Telemetry tel, String color, boolean isAuto){
@@ -53,7 +52,6 @@ public class Robot {
         this.color = color;
         this.isAuto = isAuto;
         this.isRed = color.equals("RED");
-        this.startSide = true;
         this.holding = false;
 
         this.intakeMotor = map.get(DcMotorEx.class, HardwareMapNames.intakeMotorConfig);
@@ -109,10 +107,6 @@ public class Robot {
         Robot.currentPose = pose;
     }
 
-    public void flipGoal(){
-        startSide = !startSide;
-    }
-
     public void resetPosition(){
         follower.setPose(PoseFactory.degrees().of(8.483, 8.263, 90));
     }
@@ -131,13 +125,13 @@ public class Robot {
     }
 
     public static Pose getGoalPose(){
-        if (isRed && startSide){
+        if (isRed && getCurrentPosition().y() < BotConstants.switchLine){
             return new Pose(BotConstants.redGoalPoseX,BotConstants.redGoalPoseStartY);
         }
-        if (isRed && !startSide){
+        if (isRed && getCurrentPosition().y() > BotConstants.switchLine){
             return new Pose(BotConstants.redGoalPoseX, BotConstants.redGoalPoseTipY);
         }
-        if (!isRed && !startSide){
+        if (!isRed && getCurrentPosition().y() < BotConstants.switchLine){
             return new Pose(BotConstants.blueGoalPoseX, BotConstants.blueGoalPoseTipY);
         }
 

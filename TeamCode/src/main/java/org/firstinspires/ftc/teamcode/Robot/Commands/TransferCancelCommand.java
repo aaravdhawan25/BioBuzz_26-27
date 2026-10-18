@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Robot.Commands;
 
-import com.arcrobotics.ftclib.command.ParallelCommandGroup;
+
+import com.seattlesolvers.solverslib.command.ParallelCommandGroup;
 
 import org.firstinspires.ftc.teamcode.Robot.Robot;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Blocker;

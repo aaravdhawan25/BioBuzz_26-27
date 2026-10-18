@@ -1,17 +1,17 @@
 package org.firstinspires.ftc.teamcode.OpModes.Autonomous;
 
-import com.arcrobotics.ftclib.command.CommandScheduler;
-import com.arcrobotics.ftclib.command.InstantCommand;
-import com.arcrobotics.ftclib.command.ParallelCommandGroup;
-import com.arcrobotics.ftclib.command.SequentialCommandGroup;
-import com.arcrobotics.ftclib.command.WaitCommand;
-import com.arcrobotics.ftclib.command.WaitUntilCommand;
+
 import com.pedropathing.api.Paths;
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.math.Pose;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.interpolator.Interpolator;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.seattlesolvers.solverslib.command.CommandScheduler;
+import com.seattlesolvers.solverslib.command.ParallelCommandGroup;
+import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
+import com.seattlesolvers.solverslib.command.WaitCommand;
+import com.seattlesolvers.solverslib.command.WaitUntilCommand;
 
 import org.firstinspires.ftc.teamcode.Robot.Commands.BlockerCommand;
 import org.firstinspires.ftc.teamcode.Robot.Commands.FollowPathCommand;
@@ -52,7 +52,6 @@ public class AutoOutline extends OpMode {
 
         autonomous = new SequentialCommandGroup(
                 shootFour(),
-                new InstantCommand(robot::flipGoal),
                 intake(paths.startToGarden()),
                 new FollowPathCommand(robot.follower, paths.gardenToLaunch()),
                 shootFour(),

@@ -11,5 +11,6 @@ public class BotConstants {
     public static double redGoalPoseX = 58.00;
     public static double redGoalPoseStartY = 60.00;
     public static double redGoalPoseTipY = 82.00;
+    public static double switchLine = 70;
 
 }
